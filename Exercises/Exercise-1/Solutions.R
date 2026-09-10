@@ -1,23 +1,14 @@
 # ==============================================================================
-# Exercise 1 -- R translation of Solutions.ipynb (originally Python + pyblp)
+# Exercise 1 -- R code of Solutions.ipynb (Python + pyblp)
 #
-# This mirrors the notebook cell for cell. Wherever the notebook uses plain
-# statsmodels (no pyblp), we use native R (lm + sandwich/lmtest for HC0 SEs).
-# Wherever the notebook uses pyblp itself (Problem/solve, compute_shares,
-# compute_elasticities, bootstrap, compute_costs, Simulation), we call the
-# real Python pyblp package from R via `reticulate`, so those results are
-# numerically identical to the notebook -- not just a close R approximation.
+# Call the real Python pyblp package from R via `reticulate`, so results are
+# numerically identical to the notebook.
 #
-# One-time setup (already done in this project):
+# One-time setup:
 #   library(reticulate)
 #   virtualenv_create("r-pyblp", python = "/opt/homebrew/bin/python3")
 #   virtualenv_install("r-pyblp", c("pyblp", "pandas==2.2.3", "numpy", "statsmodels"))
 #
-# NOTE: pandas is pinned to 2.2.x -- pyblp itself works fine on pandas 3.x,
-# but statsmodels' patsy formula parser crashes when called through
-# reticulate's embedded interpreter on pandas 3's chained-assignment
-# internals. Since this script only touches pandas indirectly (through
-# pyblp, fed an R data.frame), 2.2.x avoids the issue entirely.
 # ==============================================================================
 
 library(dplyr)
@@ -64,9 +55,8 @@ ols_hc0
 cat(sprintf("\nWTP for 'mushy' = %.3f\n", coef(ols_fit)["mushy"] / -coef(ols_fit)["price_per_serving"]))
 
 ## ---- 4. Run the same regression with pyblp ----------------------------------
-## From here on we rename columns to pyblp's expected names, exactly as the
-## notebook does, and keep using this renamed `product_data` for the rest of
-## the script.
+## From here on we rename columns to pyblp's expected names and keep using this 
+## renamed `product_data` for the rest of the script.
 
 product_data <- product_data %>%
   rename(market_ids = market, product_ids = product,
@@ -167,7 +157,7 @@ counterfactual_data$iv_change <- 100 * (counterfactual_data$new_shares - counter
 counterfactual_data
 # The product whose price we halved gains a lot of share; every other
 # product loses the same percent, which is an unrealistic substitution
-# pattern -- pure logit gives no extra substitution toward similar products.
+# pattern: pure logit gives no extra substitution toward similar products.
 
 ## ---- 8. Compute demand elasticities --------------------------------------------
 
@@ -175,7 +165,7 @@ iv_elasticities <- py_to_r(iv_results$compute_elasticities(market_id = counterfa
 rownames(iv_elasticities) <- colnames(iv_elasticities) <- counterfactual_data$product_ids
 round(iv_elasticities, 3)
 # Own-price elasticities suggest fairly elastic demand. Cross-price
-# elasticities are small and, again, identical within each column --
+# elasticities are small and, again, identical within each column:
 # the same unrealistic IIA substitution pattern as above.
 
 # ==============================================================================
