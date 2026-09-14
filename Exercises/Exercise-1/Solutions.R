@@ -4,9 +4,11 @@
 # Call the real Python pyblp package from R via `reticulate`, so results are
 # numerically identical to the notebook.
 #
-# One-time setup:
+# One-time setup in the R console (works on both Windows and macOS):
 #   library(reticulate)
-#   virtualenv_create("r-pyblp", python = "/opt/homebrew/bin/python3")
+#   python <- Sys.which(c("python3", "python"))
+#   python <- python[nzchar(python)][1]
+#   virtualenv_create("r-pyblp", python = python)
 #   virtualenv_install("r-pyblp", c("pyblp", "pandas==2.2.3", "numpy", "statsmodels"))
 #
 # ==============================================================================
@@ -40,7 +42,6 @@ product_data <- product_data %>%
 summary(product_data[, c("market_share", "outside_share")])
 
 ## ---- 3. Estimate the pure logit model with OLS ------------------------------
-## Native R: matches statsmodels' smf.ols(...).fit(cov_type='HC0') exactly.
 
 product_data <- product_data %>%
   mutate(logit_delta = log(market_share / outside_share))
@@ -103,7 +104,7 @@ print(fe_results)
 
 ## ---- 6. Add an instrument for price ------------------------------------------
 
-# First stage: is the price instrument relevant? (native R, matches statsmodels)
+# First stage: is the price instrument relevant?
 first_stage <- lm(prices ~ 0 + price_instrument + factor(market_ids) + factor(product_ids),
                    data = product_data)
 first_stage_hc0 <- coeftest(first_stage, vcov = vcovHC(first_stage, type = "HC0"))
